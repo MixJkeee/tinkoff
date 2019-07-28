@@ -17,7 +17,7 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 public class ObjectPool<T> {
     private static final long DEFAULT_POLLING_INTERVAL_MILLIS = 100;
     private static final long DEFAULT_TOTAL_WAIT_TIME_MILLIS = 5000;
-    private static final long DEFAULT_TRY_LOCK_MILLIS = 100;
+    private static final long DEFAULT_TRY_LOCK_MILLIS = 500;
 
     private final List<T> freeObjects = new LinkedList<>();
     private final List<T> usedObjects;
@@ -46,13 +46,14 @@ public class ObjectPool<T> {
 
     public T getObject() {
         try {
-            lock.tryLock(DEFAULT_TRY_LOCK_MILLIS, MILLISECONDS);
+            tryLockOrThrowException();
             if (freeObjects.isEmpty()) {
                 lock.unlock();
                 return waitAndTryGetObjectAgain();
             } else {
                 return getFreeObject();
             }
+
         } catch (InterruptedException e) {
             System.out.println("Thread " + currentThread().getId() + " is interrupted");
             throw new RuntimeException(e);
@@ -62,16 +63,10 @@ public class ObjectPool<T> {
         }
     }
 
-    private T getFreeObject() {
-        T object = ((LinkedList<T>) freeObjects).pop();
-        usedObjects.add(object);
-        return object;
-    }
-
     public void releaseObject(T object) {
         requireNonNull(object);
         try {
-            lock.tryLock(DEFAULT_TRY_LOCK_MILLIS, MILLISECONDS);
+            tryLockOrThrowException();
             removeObjectFromUsedObjects(object);
             ((LinkedList<T>) freeObjects).addLast(object);
         } catch (InterruptedException e) {
@@ -80,6 +75,17 @@ public class ObjectPool<T> {
         } finally {
             lock.unlock();
         }
+    }
+
+    private T getFreeObject() {
+        T object = ((LinkedList<T>) freeObjects).pop();
+        usedObjects.add(object);
+        return object;
+    }
+
+    private void removeObjectFromUsedObjects(T object) {
+        if (!usedObjects.remove(object))
+            throw new IllegalArgumentException("Object \"" + object.toString() + "\" is not used at the moment!");
     }
 
     private T waitAndTryGetObjectAgain() throws InterruptedException {
@@ -98,14 +104,15 @@ public class ObjectPool<T> {
         }
     }
 
+    private void tryLockOrThrowException() throws InterruptedException {
+        if (!lock.tryLock(DEFAULT_TRY_LOCK_MILLIS, MILLISECONDS)) {
+            throw new RuntimeException("Unable to lock object pool");
+        }
+    }
+
     private void checkListIsNotEmpty(List<? extends T> inputList) {
         if (isEmpty(inputList)) {
             throw new IllegalArgumentException("Input list is empty or null: " + inputList);
         }
-    }
-
-    private void removeObjectFromUsedObjects(T object) {
-        if (!usedObjects.remove(object))
-            throw new IllegalArgumentException("Object \"" + object.toString() + "\" is not used at the moment!");
     }
 }

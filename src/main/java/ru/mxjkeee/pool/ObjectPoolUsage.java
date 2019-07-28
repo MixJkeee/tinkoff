@@ -29,7 +29,7 @@ public class ObjectPoolUsage {
     @SneakyThrows(InterruptedException.class)
     private static Integer getUniqueId() {
         Integer id = integerPool.getObject();
-        sleep(500);
+        sleep(300);
         integerPool.releaseObject(id);
         return id;
     }
