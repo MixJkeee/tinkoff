@@ -19,8 +19,8 @@ public class ObjectPoolUsage {
         range(0, 10).parallel()
                 .forEach(i -> System.out.println("Thread " + i + " has id " + getUniqueId()));
         System.out.println(CONSOLE_DELIMITER);
-        System.out.println("With 150 threads:\n");
-        range(0, 150).parallel()
+        System.out.println("With 50 threads:\n");
+        range(0, 50).parallel()
                 .forEach(i -> System.out.println("Thread " + i + " has id " + getUniqueId()));
         System.out.println(CONSOLE_DELIMITER);
         System.out.println("End of task with ObjectPool");
