@@ -70,7 +70,7 @@ public class FileWriter {
         lines(fileWriter.getFilePath()).forEachOrdered(System.out::println);
         System.out.println(CONSOLE_DELIMITER);
         fileWriter.writeNewValue("test2", randomAlphabetic(5));
-        System.out.println("File after update:");
+        System.out.println("File after update: ");
         lines(fileWriter.getFilePath()).forEachOrdered(System.out::println);
         System.out.println(CONSOLE_DELIMITER);
         System.out.println("End task on writing to file");
