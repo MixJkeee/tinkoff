@@ -3,11 +3,11 @@ package ru.mxjkeee.pool;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.System.currentTimeMillis;
-import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -54,8 +54,7 @@ public class ObjectPool<T> {
                 return getFreeObject();
             }
 
-        } catch (InterruptedException e) {
-            System.out.println("Thread " + currentThread().getId() + " is interrupted");
+        } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         } finally {
             lock.unlock();
@@ -69,8 +68,7 @@ public class ObjectPool<T> {
             tryLockOrThrowException();
             removeObjectFromUsedObjects(object);
             ((LinkedList<T>) freeObjects).addLast(object);
-        } catch (InterruptedException e) {
-            System.out.println("Thread is interrupted");
+        } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         } finally {
             lock.unlock();
@@ -94,7 +92,7 @@ public class ObjectPool<T> {
             sleep(pollingIntervalMillis);
             return getObject();
         } else {
-            throw new InterruptedException("Thread " + currentThread().getId() + " is interrupted");
+            throw new RuntimeException("Unable to get object during the " + totalWaitTimeMillis + " millis");
         }
     }
 
@@ -104,9 +102,9 @@ public class ObjectPool<T> {
         }
     }
 
-    private void tryLockOrThrowException() throws InterruptedException {
+    private void tryLockOrThrowException() throws InterruptedException, TimeoutException {
         if (!lock.tryLock(DEFAULT_TRY_LOCK_MILLIS, MILLISECONDS)) {
-            throw new RuntimeException("Unable to lock object pool");
+            throw new TimeoutException("Unable to acquire lock on object pool");
         }
     }
 
