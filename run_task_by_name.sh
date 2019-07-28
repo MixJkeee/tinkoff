@@ -32,5 +32,5 @@ case "$TASK_NAME" in
 esac
 
 echo "mvn exec:java -Dexec.mainClass=\"$MAIN_CLASS\""
-mvn clean compile
+mvn clean test
 mvn exec:java -Dexec.mainClass=$MAIN_CLASS
