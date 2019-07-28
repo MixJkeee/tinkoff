@@ -1,5 +1,7 @@
 package ru.mxjkeee.pool;
 
+import lombok.SneakyThrows;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.sleep;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -42,6 +45,26 @@ public class ObjectPool<T> {
     public ObjectPool(List<T> freeObjects, long totalWaitTimeMillis, long pollingIntervalMillis) {
         this(freeObjects, totalWaitTimeMillis);
         this.pollingIntervalMillis = pollingIntervalMillis;
+    }
+
+    @SneakyThrows({InterruptedException.class, TimeoutException.class})
+    public List<T> getFreeObjects() {
+        try {
+            tryLockOrThrowException();
+            return unmodifiableList(freeObjects);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @SneakyThrows({InterruptedException.class, TimeoutException.class})
+    public List<T> getUsedObjects() {
+        try {
+            tryLockOrThrowException();
+            return unmodifiableList(usedObjects);
+        } finally {
+            lock.unlock();
+        }
     }
 
     public T getObject() {
