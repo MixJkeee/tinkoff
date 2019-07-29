@@ -52,7 +52,7 @@ public class ObjectPoolTests {
     @Test
     @DisplayName("Проверка таймаута ожидания свободного объекта")
     void checkTimeoutExceptionWhenTryingToGetObject() {
-        long totalWaitTimeMillis = 2000;
+        long totalWaitTimeMillis = 1000;
         ObjectPool<String> stringPool = new ObjectPool<>(singletonList("test"), totalWaitTimeMillis);
         stringPool.getObject();
         Throwable exception = assertThrows(RuntimeException.class, () -> {
