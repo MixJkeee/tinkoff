@@ -14,7 +14,7 @@ case "$TASK_NAME" in
 		MAIN_CLASS="$MAIN_CLASS.FileWriter"
 		;;
 	"task4")
-		exit 0
+		MAIN_CLASS="$MAIN_CLASS.StringsFormatter"
 		;;
 	"task5")
 		exit 0

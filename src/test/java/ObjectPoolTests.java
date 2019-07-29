@@ -70,19 +70,21 @@ public class ObjectPoolTests {
         List<Integer> objectsInPool = rangeClosed(1, objectsCount).boxed().collect(toList());
         ObjectPool<Integer> objectPool = new ObjectPool<>(objectsInPool);
         List<Integer> resultList = rangeClosed(1, objectsCount).parallel()
-                .mapToObj(i -> {
-                    int id = objectPool.getObject();
-                    sleep(300);
-                    objectPool.releaseObject(id);
-                    return id;
-                })
+                .mapToObj(i -> getObjectFromPoolWithDelay(objectPool, 300))
                 .sorted()
                 .collect(toList());
         assertThat(resultList).isEqualTo(objectsInPool);
     }
 
     @SneakyThrows(InterruptedException.class)
-    private void sleep(long millis) {
+    private static void sleep(long millis) {
         Thread.sleep(millis);
+    }
+
+    private static <T> T getObjectFromPoolWithDelay(ObjectPool<T> objectPool, long delayMillis) {
+        T object = objectPool.getObject();
+        sleep(delayMillis);
+        objectPool.releaseObject(object);
+        return object;
     }
 }
