@@ -52,14 +52,23 @@ public class ObjectPoolTests {
     @Test
     @DisplayName("Проверка таймаута ожидания свободного объекта")
     void checkTimeoutExceptionWhenTryingToGetObject() {
-        ObjectPool<String> stringPool = new ObjectPool<>(singletonList("test"), 2000);
+        long totalWaitTimeMillis = 2000;
+        ObjectPool<String> stringPool = new ObjectPool<>(singletonList("test"), totalWaitTimeMillis);
         stringPool.getObject();
         Throwable exception = assertThrows(RuntimeException.class, () -> {
                     stringPool.getObject();
-                    sleep(2000);
+                    sleep(totalWaitTimeMillis);
                 }
         );
         assertThat(exception.getMessage()).isEqualTo("Unable to get object during the " + stringPool.getTotalWaitTimeMillis() + " millis");
+    }
+
+    @Test
+    @DisplayName("Проверка ошибки при попытке вызвать releaseObject() с произвольным объектом")
+    void checkReleaseObjectException() {
+        ObjectPool<String> objectPool = new ObjectPool<>(asList("test1", "test2"));
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> objectPool.releaseObject("test3"));
+        assertThat(exception.getMessage()).isEqualTo("Object \"test3\" is not used at the moment!");
     }
 
     @ParameterizedTest
