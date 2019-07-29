@@ -1,5 +1,6 @@
 package ru.mxjkeee.pool;
 
+import lombok.Getter;
 import lombok.SneakyThrows;
 
 import java.util.ArrayList;
@@ -25,7 +26,9 @@ public class ObjectPool<T> {
     private final List<T> freeObjects = new LinkedList<>();
     private final List<T> usedObjects;
     private final Lock lock = new ReentrantLock();
+    @Getter
     private long totalWaitTimeMillis = DEFAULT_TOTAL_WAIT_TIME_MILLIS;
+    @Getter
     private long pollingIntervalMillis = DEFAULT_POLLING_INTERVAL_MILLIS;
 
     private ThreadLocal<Long> pollingStartTimeMillis = new ThreadLocal<>();
@@ -80,7 +83,7 @@ public class ObjectPool<T> {
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         } finally {
-            lock.unlock();
+            unlockPoolIfLocked();
             pollingStartTimeMillis.set(null);
         }
     }
@@ -94,7 +97,7 @@ public class ObjectPool<T> {
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         } finally {
-            lock.unlock();
+            unlockPoolIfLocked();
         }
     }
 
@@ -134,6 +137,12 @@ public class ObjectPool<T> {
     private void checkListIsNotEmpty(List<? extends T> inputList) {
         if (isEmpty(inputList)) {
             throw new IllegalArgumentException("Input list is empty or null: " + inputList);
+        }
+    }
+
+    private void unlockPoolIfLocked() {
+        if (((ReentrantLock) lock).isLocked()) {
+            lock.unlock();
         }
     }
 }

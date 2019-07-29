@@ -49,6 +49,19 @@ public class ObjectPoolTests {
         assertThat(exception.getMessage()).isEqualTo("Input list is empty or null: []");
     }
 
+    @Test
+    @DisplayName("Проверка таймаута ожидания свободного объекта")
+    void checkTimeoutExceptionWhenTryingToGetObject() {
+        ObjectPool<String> stringPool = new ObjectPool<>(singletonList("test"), 2000);
+        stringPool.getObject();
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+                    stringPool.getObject();
+                    sleep(2000);
+                }
+        );
+        assertThat(exception.getMessage()).isEqualTo("Unable to get object during the " + stringPool.getTotalWaitTimeMillis() + " millis");
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {10, 50})
     @DisplayName("Проверка, что N потоков получают уникальный ID из пула с N элементами без возврата их в пулл")
