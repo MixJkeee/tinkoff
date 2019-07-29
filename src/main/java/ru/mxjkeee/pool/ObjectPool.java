@@ -7,11 +7,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static java.lang.System.currentTimeMillis;
-import static java.lang.Thread.sleep;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -19,19 +18,15 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 
 public class ObjectPool<T> {
-    private static final long DEFAULT_POLLING_INTERVAL_MILLIS = 100;
     private static final long DEFAULT_TOTAL_WAIT_TIME_MILLIS = 5000;
     private static final long DEFAULT_TRY_LOCK_MILLIS = 500;
 
     private final List<T> freeObjects = new LinkedList<>();
     private final List<T> usedObjects;
     private final Lock lock = new ReentrantLock();
+    private final Condition hasFreeObjects = lock.newCondition();
     @Getter
     private long totalWaitTimeMillis = DEFAULT_TOTAL_WAIT_TIME_MILLIS;
-    @Getter
-    private long pollingIntervalMillis = DEFAULT_POLLING_INTERVAL_MILLIS;
-
-    private ThreadLocal<Long> pollingStartTimeMillis = new ThreadLocal<>();
 
     public ObjectPool(List<T> freeObjects) {
         checkListIsNotEmpty(freeObjects);
@@ -43,11 +38,6 @@ public class ObjectPool<T> {
     public ObjectPool(List<T> freeObjects, long totalWaitTimeMillis) {
         this(freeObjects);
         this.totalWaitTimeMillis = totalWaitTimeMillis;
-    }
-
-    public ObjectPool(List<T> freeObjects, long totalWaitTimeMillis, long pollingIntervalMillis) {
-        this(freeObjects, totalWaitTimeMillis);
-        this.pollingIntervalMillis = pollingIntervalMillis;
     }
 
     @SneakyThrows({InterruptedException.class, TimeoutException.class})
@@ -73,18 +63,13 @@ public class ObjectPool<T> {
     public T getObject() {
         try {
             tryLockOrThrowException();
-            if (freeObjects.isEmpty()) {
-                lock.unlock();
-                return waitAndTryGetObjectAgain();
-            } else {
-                return getFreeObject();
-            }
-
+            while (freeObjects.isEmpty())
+                awaitOrThrowException(hasFreeObjects);
+            return getFreeObject();
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         } finally {
-            unlockPoolIfLocked();
-            pollingStartTimeMillis.set(null);
+            lock.unlock();
         }
     }
 
@@ -94,10 +79,11 @@ public class ObjectPool<T> {
             tryLockOrThrowException();
             removeObjectFromUsedObjects(object);
             ((LinkedList<T>) freeObjects).addLast(object);
+            hasFreeObjects.signal();
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException(e);
         } finally {
-            unlockPoolIfLocked();
+            lock.unlock();
         }
     }
 
@@ -112,37 +98,21 @@ public class ObjectPool<T> {
             throw new IllegalArgumentException("Object \"" + object.toString() + "\" is not used at the moment!");
     }
 
-    private T waitAndTryGetObjectAgain() throws InterruptedException {
-        setPollingStartTimeMillis();
-        if ((currentTimeMillis() - pollingStartTimeMillis.get()) < totalWaitTimeMillis) {
-            sleep(pollingIntervalMillis);
-            return getObject();
-        } else {
-            throw new RuntimeException("Unable to get object during the " + totalWaitTimeMillis + " millis");
-        }
-    }
-
-    private void setPollingStartTimeMillis() {
-        if (pollingStartTimeMillis.get() == null) {
-            pollingStartTimeMillis.set(currentTimeMillis());
-        }
-    }
-
     private void tryLockOrThrowException() throws InterruptedException, TimeoutException {
         if (!lock.tryLock(DEFAULT_TRY_LOCK_MILLIS, MILLISECONDS)) {
             throw new TimeoutException("Unable to acquire lock on object pool");
         }
     }
 
-    private void checkListIsNotEmpty(List<? extends T> inputList) {
-        if (isEmpty(inputList)) {
-            throw new IllegalArgumentException("Input list is empty or null: " + inputList);
+    private void awaitOrThrowException(Condition condition) throws InterruptedException {
+        if(!condition.await(totalWaitTimeMillis, MILLISECONDS)) {
+            throw new RuntimeException("Unable to get object during the " + totalWaitTimeMillis + " millis");
         }
     }
 
-    private void unlockPoolIfLocked() {
-        if (((ReentrantLock) lock).isLocked()) {
-            lock.unlock();
+    private void checkListIsNotEmpty(List<? extends T> inputList) {
+        if (isEmpty(inputList)) {
+            throw new IllegalArgumentException("Input list is empty or null: " + inputList);
         }
     }
 }
