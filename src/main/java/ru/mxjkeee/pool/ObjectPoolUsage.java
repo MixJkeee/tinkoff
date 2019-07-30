@@ -12,7 +12,7 @@ public class ObjectPoolUsage {
 
     private static ObjectPool<Integer> integerPool = new ObjectPool<>(rangeClosed(1, 10).boxed().collect(toList()));
 
-    public static void main(String[] args) {
+    public static boolean runTask() {
         System.out.println("Starting task with ObjectPool...");
         System.out.println(CONSOLE_DELIMITER);
         System.out.println("With 10 threads:\n");
@@ -24,6 +24,7 @@ public class ObjectPoolUsage {
                 .forEach(i -> System.out.println("Thread " + i + " has id " + getUniqueId()));
         System.out.println(CONSOLE_DELIMITER);
         System.out.println("End of task with ObjectPool");
+        return true;
     }
 
     @SneakyThrows(InterruptedException.class)

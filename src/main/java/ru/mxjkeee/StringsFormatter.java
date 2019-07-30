@@ -20,7 +20,7 @@ public class StringsFormatter {
         return initialString;
     }
 
-    public static void main(String[] args) {
+    public static boolean runTask() {
         System.out.println("Starting task with deleting repeated symbols...");
         System.out.println(CONSOLE_DELIMITER);
         StringsFormatter stringsFormatter = new StringsFormatter();
@@ -30,5 +30,6 @@ public class StringsFormatter {
         System.out.println(initialString + " => " + stringsFormatter.formatString(initialString));
         System.out.println(CONSOLE_DELIMITER);
         System.out.println("End of task with deleting repeated symbols!");
+        return true;
     }
 }

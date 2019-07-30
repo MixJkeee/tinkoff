@@ -19,7 +19,7 @@ public class ListsVerifier<T> {
                 .collect(toList());
     }
 
-    public static void main(String[] args) {
+    public static boolean runTask() {
         System.out.println("Running task for checking lists on excess elements");
         System.out.println(CONSOLE_DELIMITER);
         ListsVerifier<String> listsVerifier = new ListsVerifier<>();
@@ -28,5 +28,6 @@ public class ListsVerifier<T> {
         listsVerifier.checkTwoListsOnCommonElements(referenceList, listToVerify);
         listToVerify = asList("A", "B", "C", "E");
         listsVerifier.checkTwoListsOnCommonElements(referenceList, listToVerify);
+        return true;
     }
 }

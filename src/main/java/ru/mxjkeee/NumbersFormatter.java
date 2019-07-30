@@ -21,11 +21,12 @@ public class NumbersFormatter {
         return result.isEmpty() ? valueOf(number) : result;
     }
 
-    public static void main(String[] args) {
+    public static boolean runTask() {
         System.out.println("Start running task \"Fizz\"/\"Buzz\"");
         System.out.println(CONSOLE_DELIMITER);
         new NumbersFormatter().printNumbers();
         System.out.println(CONSOLE_DELIMITER);
         System.out.println("End running task \"Fizz\"/\"Buzz\"");
+        return true;
     }
 }

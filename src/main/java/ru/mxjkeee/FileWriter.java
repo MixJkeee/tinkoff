@@ -62,7 +62,8 @@ public class FileWriter {
         values.set(valueIndex, newValue);
     }
 
-    public static void main(String[] args) throws IOException {
+    @SneakyThrows(IOException.class)
+    public static boolean runTask() {
         System.out.println("Starting task on writing to file");
         System.out.println(CONSOLE_DELIMITER);
         FileWriter fileWriter = FileWriter.getInstance();
@@ -74,5 +75,6 @@ public class FileWriter {
         lines(fileWriter.getFilePath()).forEachOrdered(System.out::println);
         System.out.println(CONSOLE_DELIMITER);
         System.out.println("End task on writing to file");
+        return true;
     }
 }
