@@ -3,6 +3,7 @@
 Запуск задачи производится стандартной командой mvn exec:java с указанием главного класса "ru.mxjkeee.Runner" и аргументами запуска (task1, task2 etc.).
 
 Например:
+
 mvn clean compile exec:java -Dexec.mainClass="ru.mxjkeee.Runner" -Dexec.args="task1 task2 task3 task4 task7" - запустит задачи 1, 2, 3, 4, и 7 соответственно
 
 
